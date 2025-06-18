@@ -1,0 +1,17 @@
+[package]
+name = "encryptor_gui"
+version = "0.1.0"
+authors = ["Captainimal"]
+edition = "2021"
+
+[dependencies]
+aes = "0.7"
+block-modes = "0.8"
+block-padding = "0.2"
+eframe = "0.27"
+egui = "0.27"
+hex = "0.4"
+md5 = "0.7"
+sha2 = "0.10"
+rand = "0.8"
+copypasta = "0.10"
