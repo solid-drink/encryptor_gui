@@ -74,124 +74,144 @@ impl MyApp {
 impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.heading("🔐 Text Encryptor/Hasher");
-            });
-
-            ui.separator();
-
-            ui.label("Input teks:");
             egui::ScrollArea::vertical()
-                .max_height(150.0)
+                .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    ui.add(
+                    ui.vertical_centered(|ui| {
+                        ui.heading("🔐 Text Encryptor/Hasher");
+                    });
+
+                    ui.separator();
+
+                    ui.label("Input teks:");
+                    ui.add_sized(
+                        [ui.available_width(), 150.0],
                         egui::TextEdit::multiline(&mut self.input_text)
                             .desired_rows(6)
                             .desired_width(f32::INFINITY),
                     );
-                });
 
-            ui.add_space(10.0);
+                    ui.add_space(10.0);
 
-            egui::ComboBox::from_label("Metode")
-                .selected_text(format!("{:?}", self.method))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.method, Method::MD5, "MD5");
-                    ui.selectable_value(&mut self.method, Method::SHA256, "SHA256");
-                    ui.selectable_value(&mut self.method, Method::AESEncrypt, "AES Encrypt");
-                    ui.selectable_value(&mut self.method, Method::AESDecrypt, "AES Decrypt");
-                });
+                    egui::ComboBox::from_label("Metode")
+                        .selected_text(format!("{:?}", self.method))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut self.method, Method::MD5, "MD5");
+                            ui.selectable_value(&mut self.method, Method::SHA256, "SHA256");
+                            ui.selectable_value(
+                                &mut self.method,
+                                Method::AESEncrypt,
+                                "AES Encrypt",
+                            );
+                            ui.selectable_value(
+                                &mut self.method,
+                                Method::AESDecrypt,
+                                "AES Decrypt",
+                            );
+                        });
 
-            if matches!(self.method, Method::AESEncrypt | Method::AESDecrypt) {
-                ui.label("🔑 Key (32-byte hex):");
-                ui.horizontal(|ui| {
-                    ui.add(egui::TextEdit::singleline(&mut self.key).desired_width(f32::INFINITY));
-                    if ui.button("Generate").clicked() {
-                        self.key = Self::generate_random_bytes_hex(32);
-                    }
-                    if ui.button("Copy").clicked() {
-                        Self::copy_to_clipboard(&self.key);
-                    }
-                });
+                    if matches!(self.method, Method::AESEncrypt | Method::AESDecrypt) {
+                        ui.label("🔑 Key (32-byte hex):");
+                        ui.horizontal(|ui| {
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.key)
+                                    .desired_width(f32::INFINITY),
+                            );
+                            if ui.button("Generate").clicked() {
+                                self.key = Self::generate_random_bytes_hex(32);
+                            }
+                            if ui.button("Copy").clicked() {
+                                Self::copy_to_clipboard(&self.key);
+                            }
+                        });
 
-                ui.label("🧬 IV (16-byte hex):");
-                ui.horizontal(|ui| {
-                    ui.add(egui::TextEdit::singleline(&mut self.iv).desired_width(f32::INFINITY));
-                    if ui.button("Generate").clicked() {
-                        self.iv = Self::generate_random_bytes_hex(16);
+                        ui.label("🧬 IV (16-byte hex):");
+                        ui.horizontal(|ui| {
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.iv)
+                                    .desired_width(f32::INFINITY),
+                            );
+                            if ui.button("Generate").clicked() {
+                                self.iv = Self::generate_random_bytes_hex(16);
+                            }
+                            if ui.button("Copy").clicked() {
+                                Self::copy_to_clipboard(&self.iv);
+                            }
+                        });
                     }
-                    if ui.button("Copy").clicked() {
-                        Self::copy_to_clipboard(&self.iv);
-                    }
-                });
-            }
 
-            ui.add_space(10.0);
+                    ui.add_space(10.0);
 
-            if ui.button("🔁 Proses").clicked() {
-                match self.method {
-                    Method::MD5 => {
-                        let digest = md5::compute(self.input_text.as_bytes());
-                        self.output_text = format!("{:x}", digest);
-                    }
-                    Method::SHA256 => {
-                        let mut hasher = Sha256::new();
-                        hasher.update(self.input_text.as_bytes());
-                        let result = hasher.finalize();
-                        self.output_text = format!("{:x}", result);
-                    }
-                    Method::AESEncrypt => {
-                        if let (Ok(key_bytes), Ok(iv_bytes)) =
-                            (hex::decode(&self.key), hex::decode(&self.iv))
-                        {
-                            if key_bytes.len() != 32 || iv_bytes.len() != 16 {
-                                self.output_text =
-                                    "❌ Key harus 32 byte & IV 16 byte (hex)!".into();
-                            } else {
-                                match self.aes_encrypt(&self.input_text, &key_bytes, &iv_bytes) {
-                                    Ok(encrypted) => self.output_text = encrypted,
-                                    Err(e) => self.output_text = format!("❌ Error: {}", e),
+                    if ui.button("🔁 Proses").clicked() {
+                        match self.method {
+                            Method::MD5 => {
+                                let digest = md5::compute(self.input_text.as_bytes());
+                                self.output_text = format!("{:x}", digest);
+                            }
+                            Method::SHA256 => {
+                                let mut hasher = Sha256::new();
+                                hasher.update(self.input_text.as_bytes());
+                                let result = hasher.finalize();
+                                self.output_text = format!("{:x}", result);
+                            }
+                            Method::AESEncrypt => {
+                                if let (Ok(key_bytes), Ok(iv_bytes)) =
+                                    (hex::decode(&self.key), hex::decode(&self.iv))
+                                {
+                                    if key_bytes.len() != 32 || iv_bytes.len() != 16 {
+                                        self.output_text =
+                                            "❌ Key harus 32 byte & IV 16 byte (hex)!".into();
+                                    } else {
+                                        match self.aes_encrypt(
+                                            &self.input_text,
+                                            &key_bytes,
+                                            &iv_bytes,
+                                        ) {
+                                            Ok(encrypted) => self.output_text = encrypted,
+                                            Err(e) => self.output_text = format!("❌ Error: {}", e),
+                                        }
+                                    }
+                                } else {
+                                    self.output_text = "❌ Format key atau IV salah!".into();
                                 }
                             }
-                        } else {
-                            self.output_text = "❌ Format key atau IV salah!".into();
-                        }
-                    }
-                    Method::AESDecrypt => {
-                        if let (Ok(key_bytes), Ok(iv_bytes)) =
-                            (hex::decode(&self.key), hex::decode(&self.iv))
-                        {
-                            if key_bytes.len() != 32 || iv_bytes.len() != 16 {
-                                self.output_text =
-                                    "❌ Key harus 32 byte & IV 16 byte (hex)!".into();
-                            } else {
-                                match self.aes_decrypt(&self.input_text, &key_bytes, &iv_bytes) {
-                                    Ok(decrypted) => self.output_text = decrypted,
-                                    Err(e) => self.output_text = format!("❌ Error: {}", e),
+                            Method::AESDecrypt => {
+                                if let (Ok(key_bytes), Ok(iv_bytes)) =
+                                    (hex::decode(&self.key), hex::decode(&self.iv))
+                                {
+                                    if key_bytes.len() != 32 || iv_bytes.len() != 16 {
+                                        self.output_text =
+                                            "❌ Key harus 32 byte & IV 16 byte (hex)!".into();
+                                    } else {
+                                        match self.aes_decrypt(
+                                            &self.input_text,
+                                            &key_bytes,
+                                            &iv_bytes,
+                                        ) {
+                                            Ok(decrypted) => self.output_text = decrypted,
+                                            Err(e) => self.output_text = format!("❌ Error: {}", e),
+                                        }
+                                    }
+                                } else {
+                                    self.output_text = "❌ Format key atau IV salah!".into();
                                 }
                             }
-                        } else {
-                            self.output_text = "❌ Format key atau IV salah!".into();
                         }
                     }
-                }
-            }
 
-            ui.separator();
-            ui.label("Output:");
-            egui::ScrollArea::vertical()
-                .max_height(150.0)
-                .show(ui, |ui| {
-                    ui.add(
+                    ui.separator();
+                    ui.label("Output:");
+                    ui.add_sized(
+                        [ui.available_width(), 150.0],
                         egui::TextEdit::multiline(&mut self.output_text)
                             .desired_rows(6)
                             .desired_width(f32::INFINITY),
                     );
-                });
 
-            if ui.button("📋 Copy Output").clicked() {
-                Self::copy_to_clipboard(&self.output_text);
-            }
+                    if ui.button("📋 Copy Output").clicked() {
+                        Self::copy_to_clipboard(&self.output_text);
+                    }
+                });
         });
     }
 }
