@@ -163,32 +163,38 @@ impl App for MyApp {
                         });
 
                     if matches!(self.method, Method::AESEncrypt | Method::AESDecrypt) {
-                        ui.label("🔑 Key (32-byte hex):");
+                        ui.horizontal(|ui| {
+                            ui.label("🔑 Key (32-byte hex):");
+                            if ui.button("Copy").clicked() {
+                                Self::copy_to_clipboard(&self.key);
+                            }
+                            if ui.button("Generate").clicked() {
+                                self.key = Self::generate_random_bytes_hex(32);
+                            }
+                        });
+
                         ui.horizontal(|ui| {
                             ui.add(
                                 egui::TextEdit::singleline(&mut self.key)
                                     .desired_width(f32::INFINITY),
                             );
-                            if ui.button("Generate").clicked() {
-                                self.key = Self::generate_random_bytes_hex(32);
-                            }
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label("🧬 IV (16-byte hex):");
                             if ui.button("Copy").clicked() {
-                                Self::copy_to_clipboard(&self.key);
+                                Self::copy_to_clipboard(&self.iv);
+                            }
+                            if ui.button("Generate").clicked() {
+                                self.iv = Self::generate_random_bytes_hex(16);
                             }
                         });
 
-                        ui.label("🧬 IV (16-byte hex):");
                         ui.horizontal(|ui| {
                             ui.add(
                                 egui::TextEdit::singleline(&mut self.iv)
                                     .desired_width(f32::INFINITY),
                             );
-                            if ui.button("Generate").clicked() {
-                                self.iv = Self::generate_random_bytes_hex(16);
-                            }
-                            if ui.button("Copy").clicked() {
-                                Self::copy_to_clipboard(&self.iv);
-                            }
                         });
                     }
 
@@ -207,6 +213,13 @@ impl App for MyApp {
                                 self.output_text = format!("{:x}", result);
                             }
                             Method::AESEncrypt => {
+                                if self.key.is_empty() {
+                                    self.key = Self::generate_random_bytes_hex(32);
+                                }
+                                if self.iv.is_empty() {
+                                    self.iv = Self::generate_random_bytes_hex(16);
+                                }
+
                                 if let (Ok(key_bytes), Ok(iv_bytes)) =
                                     (hex::decode(&self.key), hex::decode(&self.iv))
                                 {
