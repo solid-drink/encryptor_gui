@@ -8,6 +8,8 @@ use block_modes::{BlockMode, Cbc};
 use copypasta::{ClipboardContext, ClipboardProvider};
 use hex;
 use rand::{thread_rng, RngCore};
+use rfd::FileDialog;
+use std::fs;
 
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
 
@@ -25,6 +27,7 @@ pub struct MyApp {
     method: Method,
     key: String,
     iv: String,
+    fixed_input_field: bool,
 }
 
 impl Default for MyApp {
@@ -35,6 +38,7 @@ impl Default for MyApp {
             method: Method::MD5,
             key: String::new(),
             iv: String::new(),
+            fixed_input_field: true,
         }
     }
 }
@@ -73,6 +77,45 @@ impl MyApp {
 
 impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Import .txt").clicked() {
+                        if let Some(path) = FileDialog::new()
+                            .add_filter("Text Files", &["txt"])
+                            .pick_file()
+                        {
+                            if let Ok(content) = fs::read_to_string(path) {
+                                self.input_text = content;
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Export Output").clicked() {
+                        if let Some(path) =
+                            FileDialog::new().set_file_name("output.txt").save_file()
+                        {
+                            let _ = fs::write(path, &self.output_text);
+                        }
+                        ui.close_menu();
+                    }
+                });
+
+                ui.menu_button("View", |ui| {
+                    ui.checkbox(
+                        &mut self.fixed_input_field,
+                        "Fixed Input Height",
+                    );
+                });
+
+                ui.menu_button("❓ Help", |ui| {
+                    ui.label("Made with 🦀 Rust + egui");
+                    ui.label("v0.1.0 Encryptor GUI");
+                    ui.label("github.com/solid-drink/encryptor_gui");
+                });
+            });
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
@@ -82,14 +125,24 @@ impl App for MyApp {
                     });
 
                     ui.separator();
-
                     ui.label("Input teks:");
-                    ui.add_sized(
-                        [ui.available_width(), 150.0],
-                        egui::TextEdit::multiline(&mut self.input_text)
-                            .desired_rows(6)
-                            .desired_width(f32::INFINITY),
-                    );
+
+                    if self.fixed_input_field {
+                        egui::ScrollArea::vertical()
+                            .max_height(150.0)
+                            .show(ui, |ui| {
+                                ui.add(
+                                    egui::TextEdit::multiline(&mut self.input_text)
+                                        .desired_width(f32::INFINITY)
+                                        .frame(true),
+                                );
+                            });
+                    } else {
+                        ui.add(
+                            egui::TextEdit::multiline(&mut self.input_text)
+                                .desired_width(f32::INFINITY),
+                        );
+                    }
 
                     ui.add_space(10.0);
 
