@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use eframe::{egui, App};
 use md5;
 use sha2::{Digest as ShaDigest, Sha256};
@@ -102,15 +104,12 @@ impl App for MyApp {
                 });
 
                 ui.menu_button("View", |ui| {
-                    ui.checkbox(
-                        &mut self.fixed_input_field,
-                        "Fixed Input Height",
-                    );
+                    ui.checkbox(&mut self.fixed_input_field, "Fixed Text Field");
                 });
 
-                ui.menu_button("❓ Help", |ui| {
+                ui.menu_button("Help", |ui| {
                     ui.label("Made with 🦀 Rust + egui");
-                    ui.label("v0.1.0 Encryptor GUI");
+                    ui.label("v1.2.0 Encryptor GUI");
                     ui.label("github.com/solid-drink/encryptor_gui");
                 });
             });

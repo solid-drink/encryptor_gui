@@ -3,6 +3,9 @@ name = "encryptor_gui"
 version = "0.1.0"
 authors = ["Captainimal"]
 edition = "2021"
+description = "Rust GUI Encryptor tool using egui + AES/Hashing"
+repository = "https://github.com/Captanimal/encryptor_gui"
+license = "MIT"
 
 [dependencies]
 aes = "0.7"
